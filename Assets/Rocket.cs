@@ -7,6 +7,7 @@ public class Rocket : MonoBehaviour {
 
     Rigidbody rigidBody;
     AudioSource audioSource;
+    bool collisionsDisabled = false;
 
     enum State { Alive, Transcending, Dead }
     State state = State.Alive;
@@ -27,23 +28,37 @@ public class Rocket : MonoBehaviour {
 
         rigidBody = GetComponent<Rigidbody>();
         audioSource = GetComponent<AudioSource>();
-
         
 	}
-	
-	// Update is called once per frame
-	void Update () {
-        if (state == State.Alive) {
+
+    // Update is called once per frame
+    void Update()
+    {
+        if (state == State.Alive)
+        {
             RespondToThrustInput();
             RespondToRotateInput();
 
+        }
+        if (Debug.isDebugBuild) {
+            RespondToDebugKeys();
+        }
+    }
+    private void RespondToDebugKeys()
+    {
+        if (Input.GetKeyDown(KeyCode.L))
+        {
+            LoadNextScene();
+        } else if (Input.GetKeyDown(KeyCode.C))
+        {
+            collisionsDisabled = !collisionsDisabled; //toggle for collisions
         }
     }
 
     void OnCollisionEnter(Collision collision)
     {
         //when called, this statement ensures that it won't continue to other code below
-        if (state != State.Alive) { return; }
+        if (state != State.Alive || collisionsDisabled) { return; }
 
         switch (collision.gameObject.tag)
         {
@@ -88,7 +103,14 @@ public class Rocket : MonoBehaviour {
 
     private void LoadNextScene()
     {
-        SceneManager.LoadScene(1);
+        int currentSceneIndex = SceneManager.GetActiveScene().buildIndex;
+        int nextSceneIndex = currentSceneIndex + 1;
+
+        if (nextSceneIndex == SceneManager.sceneCountInBuildSettings)
+        {
+            nextSceneIndex = 0;
+        }
+        SceneManager.LoadScene(nextSceneIndex);
     }
 
     private void RespondToRotateInput()
